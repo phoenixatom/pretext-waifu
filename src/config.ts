@@ -92,6 +92,7 @@ export interface AppState {
 }
 
 export interface AnimState {
+  enabled: boolean
   mouse: { x: number; y: number; onCanvas: boolean }
   smooth: { x: number; y: number }
   morph: { active: boolean; from: string; to: string; startTime: number; duration: number }

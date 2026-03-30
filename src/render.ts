@@ -49,7 +49,7 @@ function getEffectiveContours(
   time: number,
 ): (Contour | null)[] {
   const out: (Contour | null)[] = new Array(numLines)
-  const breath = 0.022 * Math.sin(time * 0.0015)
+  const breath = anim.enabled ? 0.022 * Math.sin(time * 0.0015) : 0
   let mt = 0
   if (anim.morph.active) {
     mt = ease(Math.min(1, (performance.now() - anim.morph.startTime) / anim.morph.duration))
@@ -243,17 +243,21 @@ export function renderFrame(
   const base = getBaseContours(state, numLines)
   const contours = getEffectiveContours(base, numLines, state, anim, time)
 
-  // Smooth mouse for parallax
-  const tgtX = anim.mouse.onCanvas ? anim.mouse.x : cw / 2
-  const tgtY = anim.mouse.onCanvas ? anim.mouse.y : ch / 2
-  anim.smooth.x += (tgtX - anim.smooth.x) * 0.08
-  anim.smooth.y += (tgtY - anim.smooth.y) * 0.08
-  const maxSh = fontSize * 0.25
-  const shX = -(anim.smooth.x / cw - 0.5) * 2 * maxSh
-  const shY = -(anim.smooth.y / ch - 0.5) * 2 * maxSh
+  // Smooth mouse for parallax (only when animated)
+  let shX = 0, shY = 0
+  if (anim.enabled) {
+    const tgtX = anim.mouse.onCanvas ? anim.mouse.x : cw / 2
+    const tgtY = anim.mouse.onCanvas ? anim.mouse.y : ch / 2
+    anim.smooth.x += (tgtX - anim.smooth.x) * 0.08
+    anim.smooth.y += (tgtY - anim.smooth.y) * 0.08
+    const maxSh = fontSize * 0.25
+    shX = -(anim.smooth.x / cw - 0.5) * 2 * maxSh
+    shY = -(anim.smooth.y / ch - 0.5) * 2 * maxSh
+  }
 
   // Slash trail pruning
   const now = performance.now()
+  if (!anim.enabled) anim.slash.trail.length = 0
   while (anim.slash.trail.length && now - anim.slash.trail[0].time > anim.slash.maxAge)
     anim.slash.trail.shift()
 

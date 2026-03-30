@@ -18,6 +18,7 @@ const state: AppState = {
 }
 
 const anim: AnimState = {
+  enabled: true,
   mouse: { x: 0, y: 0, onCanvas: false },
   smooth: { x: 0, y: 0 },
   morph: { active: false, from: '', to: '', startTime: 0, duration: 900 },
@@ -66,12 +67,20 @@ function processImage(img: HTMLImageElement): void {
 let animId: number | null = null
 
 function loop(t: number): void {
-  animId = requestAnimationFrame(loop)
   renderFrame(ctx, canvas, state, anim, getText(), t)
+  if (anim.enabled) {
+    animId = requestAnimationFrame(loop)
+  } else {
+    animId = null
+  }
 }
 
 function startAnim(): void {
   if (!animId) animId = requestAnimationFrame(loop)
+}
+
+function renderOnce(): void {
+  renderFrame(ctx, canvas, state, anim, getText(), performance.now())
 }
 
 // ── Image loading ─────────────────────────────────────────────────────
@@ -170,14 +179,22 @@ canvas.addEventListener('touchend', () => {
 })
 
 // Controls
+$('animate').addEventListener('change', (e) => {
+  anim.enabled = (e.target as HTMLInputElement).checked
+  if (anim.enabled && state.imageData) startAnim()
+  else if (!anim.enabled && state.imageData) renderOnce()
+})
 $('fontSize').addEventListener('input', (e) => {
   state.fontSize = +(e.target as HTMLInputElement).value
+  if (!anim.enabled) renderOnce()
 })
 $('contrast').addEventListener('input', (e) => {
   state.contrast = +(e.target as HTMLInputElement).value
+  if (!anim.enabled) renderOnce()
 })
 $('theme').addEventListener('change', (e) => {
   state.theme = (e.target as HTMLSelectElement).value
+  if (!anim.enabled) renderOnce()
 })
 $('mode').addEventListener('change', (e) => {
   const prev = anim.morph.active ? anim.morph.to : state.mode
@@ -189,11 +206,13 @@ $('mode').addEventListener('change', (e) => {
     anim.morph.startTime = performance.now()
   }
   state.mode = next
+  if (!anim.enabled) renderOnce()
 })
 $('changeImage').addEventListener('click', () => fileInput.click())
 $('textPreset').addEventListener('change', (e) => {
   state.textPreset = (e.target as HTMLSelectElement).value
   $('customTextWrap').classList.toggle('hidden', state.textPreset !== 'custom')
+  if (!anim.enabled) renderOnce()
 })
 let textTimer: ReturnType<typeof setTimeout>
 $('customText').addEventListener('input', (e) => {
